@@ -1,8 +1,13 @@
 open Yojson.Safe
 open Yojson.Safe.Util
 
-let config = from_file "config"
+let config =
+  let config_file =
+    try Sys.argv.(1) with _ -> failwith "Missing argument: config."
+  in
+  from_file config_file
 
+(* TODO: Take these values are argument, read them from the main module. *)
 let token = member "token" config |> to_string
 
 let bot_id = member "bot_id" config |> to_string
