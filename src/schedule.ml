@@ -1,5 +1,5 @@
 (* Time at which the message should be sent in UTC *)
-let schedule_time = (10, 00, 0)
+let schedule_time = (20, 00, 0)
 
 let weekday_to_int = function
   | `Mon -> 0

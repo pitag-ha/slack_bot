@@ -1,9 +1,11 @@
 open Yojson.Basic
 open Yojson.Basic.Util
 
-let config = from_file "config"
-
-let real_channel = member "channel_id" config |> to_string
+let config =
+  let config_file =
+    try Sys.argv.(1) with _ -> failwith "Missing argument: config."
+  in
+  from_file config_file
 
 let test_channel = member "test_channel_id" config |> to_string
 
@@ -11,9 +13,6 @@ open Types
 
 let test_case =
   { channel = test_channel; db_path = "irmin/new"; num_iter = 1000 }
-
-let real_case =
-  { channel = real_channel; db_path = "../irmin/real"; num_iter = 100000000 }
 
 let write_matches_to_irmin_and_slack our_match case =
   let open Lwt.Syntax in
