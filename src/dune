@@ -1,5 +1,6 @@
 (executable
  (name slack_bot)
+ (public_name slack_bot)
  (modules_without_implementation types)
  (preprocess
   (pps ppx_deriving_yojson))
