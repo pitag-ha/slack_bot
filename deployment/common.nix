@@ -1,11 +1,8 @@
 { config, pkgs, ... }:
 
-let
-  slack_bot = pkgs.callPackage ../. {};
+let slack_bot = pkgs.callPackage ../. { };
 
-in
-
-{
+in {
   imports = [ # It's a VM running on the cloud so be small
     <nixpkgs/nixos/modules/profiles/headless.nix>
     <nixpkgs/nixos/modules/profiles/minimal.nix>
