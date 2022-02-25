@@ -1,43 +1,51 @@
-(* Time at which the message should be sent in UTC *)
-let schedule_time = (20, 00, 0)
+module Weekday = struct
+  type t = [ `Mon | `Tue | `Wed | `Thu | `Fri | `Sat | `Sun ]
 
-let weekday_to_int = function
-  | `Mon -> 0
-  | `Tue -> 1
-  | `Wed -> 2
-  | `Thu -> 3
-  | `Fri -> 4
-  | `Sat -> 5
-  | `Sun -> 6
+  type span = int
 
-let time_to_secs (h, min, sec) = sec + (min * 60) + (h * 60 * 60)
+  let to_int = function
+    | `Mon -> 0
+    | `Tue -> 1
+    | `Wed -> 2
+    | `Thu -> 3
+    | `Fri -> 4
+    | `Sat -> 5
+    | `Sun -> 6
 
-let time_since_last_message now schedule_day =
-  let weekday = Ptime.weekday now in
-  let _current_date, (current_time, _) = Ptime.to_date_time now in
-  (* secs_passed is negative if we are before schedule time *)
-  let secs_passed = time_to_secs current_time - time_to_secs schedule_time in
-  if weekday = schedule_day && secs_passed < 0 then -secs_passed
-  else
-    let days_passed =
-      let days_since_schedule_day =
-        (weekday_to_int weekday - weekday_to_int schedule_day + 7) mod 7
-      in
-      60 * 60 * 24 * days_since_schedule_day
-    in
-    let full_week = 60 * 60 * 24 * 7 in
-    full_week - days_passed - secs_passed
+  let span_between ~allow_zero first last =
+    let first = to_int first in
+    let last = to_int last in
+    if last > first then last - first
+    else if first = last && allow_zero then 0
+    else 7 - first + last
 
-let sleep_secs secs =
-  let nsecs_of_secs s = Int64.(mul (of_int s) 1_000_000_000L) in
-  Time.sleep_ns (nsecs_of_secs secs)
+  let span_to_secs span = span * 24 * 60 * 60
+end
 
-let sleep_till_next_opt_in () =
-  let schedule_day = `Mon in
+module Daytime = struct
+  type t = int * int * int
+
+  let time_to_secs (h, min, sec) = sec + (min * 60) + (h * 60 * 60)
+
+  let span_between start_time end_time =
+    time_to_secs end_time - time_to_secs start_time
+end
+
+let secs_till schedule_day schedule_time =
   let now = Pclock.now_d_ps () |> Ptime.v in
-  sleep_secs (time_since_last_message now schedule_day)
+  let _, (current_time, _) = Ptime.to_date_time now in
+  let secs_till_schedule_time =
+    Daytime.span_between current_time schedule_time
+  in
+  let allow_zero = secs_till_schedule_time > 0 in
+  let today = Ptime.weekday now in
+  let days_till_schedule_day =
+    Weekday.(span_between ~allow_zero today schedule_day)
+  in
+  Weekday.span_to_secs days_till_schedule_day + secs_till_schedule_time
 
-let sleep_till_next_matches () =
-  let schedule_day = `Tue in
-  let now = Pclock.now_d_ps () |> Ptime.v in
-  sleep_secs (time_since_last_message now schedule_day)
+let sleep_till day time =
+  let nsecs_to_sleep =
+    secs_till day time |> Int64.of_int |> Int64.mul 1_000_000_000L
+  in
+  Time.sleep_ns nsecs_to_sleep

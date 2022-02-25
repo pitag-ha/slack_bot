@@ -36,9 +36,9 @@ let write_opt_in_to_irmin_and_slack case =
 
 let main case =
   let open Lwt.Syntax in
-  let* () = Schedule.sleep_till_next_opt_in () in
+  let* () = Schedule.sleep_till `Mon (10, 00, 0) in
   let* () = write_opt_in_to_irmin_and_slack case in
-  let* () = Schedule.sleep_till_next_matches () in
+  let* () = Schedule.sleep_till `Tue (10, 00, 0) in
   let* most_optimum = Match.get_most_optimum case in
   write_matches_to_irmin_and_slack most_optimum case
 
