@@ -38,6 +38,10 @@ in
     systemd.services.slack-bot = {
       enable = true;
       wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        WorkingDirectory = "~";
+        User = "slack-bot";
+      };
       script = ''
         ${slack_bot}/bin/slack_bot "${config.bot_config}"
       '';
