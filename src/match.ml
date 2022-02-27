@@ -26,13 +26,13 @@ let to_string (matches_list : string list list) =
   |> List.fold_left
        (fun acc current_match ->
          acc ^ String.concat " with " current_match ^ "\n")
-       ":coffee: Matches this week:\n")
+       ":camel: Matches this week:\n")
   ^ "\n\
-    \ Have some nice coffee chats! \n\
     \ :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: \
      :sheepy:\n\
-     Remember that I (the :coffee:bot) don't initiate a conversation. You'll \
-     have to reach out to your coffee chat partner by yourself:writing_hand:"
+     Note: I don't initiate a conversation. You'll have to reach out to your \
+     pair-programming partner(s) by yourself:writing_hand:\n\
+    \   Have some nice pair-programming sessions! \n"
 
 let get_most_optimum (case : Types.case_record) =
   let open Lwt.Syntax in

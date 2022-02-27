@@ -72,7 +72,7 @@ let parse_ts resp = from_string resp |> member "ts" |> to_string
 let write_opt_in_message channel =
   let uri = Uri.of_string "https://slack.com/api/chat.postMessage" in
   let message =
-    "Hi <!here>?, who wants to have a coffee-chat this week? React to this \
+    "Hi <!here>, who wants to pair-program this week? To opt in, react to this \
      message, for example with a :raised_hand::skin-tone-4:"
   in
   let headers =
