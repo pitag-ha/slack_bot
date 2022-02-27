@@ -1,3 +1,4 @@
+secret-configuration.nix
 config
 _build/
 .merlin
