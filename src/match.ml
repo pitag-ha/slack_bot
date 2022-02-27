@@ -18,9 +18,7 @@ let rec pair_up_list (acc : string list list) (members : string list) :
   match members with
   | [] -> acc
   | [ last ] -> (
-      match acc with
-      | [] -> failwith "There's only one person in this channel."
-      | fst :: tl -> (last :: fst) :: tl)
+      match acc with [] -> [ [ last ] ] | fst :: tl -> (last :: fst) :: tl)
   | f :: s :: tl -> pair_up_list ([ f; s ] :: acc) tl
 
 let to_string (matches_list : string list list) =
@@ -39,25 +37,29 @@ let to_string (matches_list : string list list) =
 let get_most_optimum (case : Types.case_record) =
   let open Lwt.Syntax in
   let* members = Http_requests.get_reactions case.channel case.db_path in
-  let members =
-    match members with Error _ -> assert false | Ok members -> members
-  in
-  let* old_matches = Irmin_io.get_old_matches case.db_path in
-  let tbl = Score.construct_hashmap old_matches in
-  let rec loop num_iter best_match best_score =
-    if num_iter = case.num_iter then
-      let _ = Printf.printf "\n Number iterations: %d \n" num_iter in
-      best_match
-    else
-      let new_match = members |> shuffle |> pair_up_list [] in
-      let new_score = Score.compute_total tbl new_match in
-      match new_score with
-      | 0 ->
+  match members with
+  | Error _ -> assert false
+  | Ok [] -> Lwt.return [ [] ]
+  | Ok [ only_member ] -> Lwt.return [ [ only_member ] ]
+  | Ok [ first; second ] -> Lwt.return [ [ first; second ] ]
+  | Ok members ->
+      let* old_matches = Irmin_io.get_old_matches case.db_path in
+      let tbl = Score.construct_hashmap old_matches in
+      let rec loop num_iter best_match best_score =
+        if num_iter = case.num_iter then
           let _ = Printf.printf "\n Number iterations: %d \n" num_iter in
-          new_match
-      | _ ->
-          if new_score < best_score then loop (num_iter + 1) new_match new_score
-          else loop (num_iter + 1) best_match best_score
-  in
-  let first_match = members |> shuffle |> pair_up_list [] in
-  Lwt.return (loop 1 first_match (Score.compute_total tbl first_match))
+          best_match
+        else
+          let new_match = members |> shuffle |> pair_up_list [] in
+          let new_score = Score.compute_total tbl new_match in
+          match new_score with
+          | 0 ->
+              let _ = Printf.printf "\n Number iterations: %d \n" num_iter in
+              new_match
+          | _ ->
+              if new_score < best_score then
+                loop (num_iter + 1) new_match new_score
+              else loop (num_iter + 1) best_match best_score
+      in
+      let first_match = members |> shuffle |> pair_up_list [] in
+      Lwt.return (loop 1 first_match (Score.compute_total tbl first_match))
