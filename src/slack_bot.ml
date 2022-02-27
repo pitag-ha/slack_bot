@@ -9,10 +9,15 @@ let config =
 
 let test_channel = member "test_channel_id" config |> to_string
 
+let real_channel = member "adoption_channel_id" config |> to_string
+
 open Types
 
 let test_case =
-  { channel = test_channel; db_path = "irmin/new"; num_iter = 1000 }
+  { channel = test_channel; db_path = "irmin/pairing_bot_testing"; num_iter = 1000 }
+
+let real_case =
+  { channel = real_channel; db_path = "../irmin/pairing_bot"; num_iter = 100000000 }
 
 let write_matches_to_irmin_and_slack our_match case =
   let open Lwt.Syntax in
@@ -36,13 +41,13 @@ let write_opt_in_to_irmin_and_slack case =
 
 let main case =
   let open Lwt.Syntax in
-  let* () = Schedule.sleep_till `Mon (10, 00, 0) in
+  let* () = Schedule.sleep_till `Mon (10, 0, 0) in
   let* () = write_opt_in_to_irmin_and_slack case in
-  let* () = Schedule.sleep_till `Tue (10, 00, 0) in
+  let* () = Schedule.sleep_till `Tue (10, 0, 0) in
   let* most_optimum = Match.get_most_optimum case in
   write_matches_to_irmin_and_slack most_optimum case
 
 let () =
   while true do
-    Lwt_main.run (main test_case)
+    Lwt_main.run (main real_case)
   done
