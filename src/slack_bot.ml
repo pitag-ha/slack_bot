@@ -17,7 +17,7 @@ let test_case =
   { channel = test_channel; db_path = "irmin/pairing_bot_testing"; num_iter = 1000 }
 
 let real_case =
-  { channel = real_channel; db_path = "../irmin/pairing_bot"; num_iter = 100000000 }
+  { channel = real_channel; db_path = "irmin/pairing_bot"; num_iter = 100000000 }
 
 let write_matches_to_irmin_and_slack our_match case =
   let open Lwt.Syntax in
