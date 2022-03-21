@@ -54,7 +54,7 @@ let construct_hashmap all_old_matches =
                    (List.nth current_match 0 |> to_string)
                    (List.nth current_match 2 |> to_string)
                    tbl value
-             | _ -> failwith "not accounted for!"))
+             | _ -> Printf.printf "The match in the db with epoch %s is neither a pair nor a triple. It has been ignored." epoch))
     all_old_matches;
   tbl
 
