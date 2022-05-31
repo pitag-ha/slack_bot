@@ -18,7 +18,11 @@ let rec pair_up_list (acc : string list list) (members : string list) :
   match members with
   | [] -> acc
   | [ last ] -> (
-      match acc with [] -> [ [ last ] ] | fst :: tl -> (last :: fst) :: tl)
+      match acc with
+      | [] -> [ [ last ] ]
+      | fst :: tl ->
+          [ last; List.nth fst 0 ] :: [ last; List.nth fst 1 ] :: tl
+          (* [fst] being of length 2 is an invariant of [pair_up_list] *))
   | f :: s :: tl -> pair_up_list ([ f; s ] :: acc) tl
 
 let to_string (matches_list : string list list) =

@@ -21,11 +21,13 @@ let single_match_score epoch =
   let now = Unix.time () in
   let value = float_of_string epoch in
   let day = 86400. in
-  if (now -. value) /. day <= 9. then 10
+  (* TODO: the scores should depend on the number of people opting in:
+     if very few people are opting in, the most important is to avoid repeats from last week. *)
+  if (now -. value) /. day <= 9. then 50
   else if (now -. value) /. day <= 16. then 5
   else if (now -. value) /. day <= 28. then 3
   else if (now -. value) /. day <= 56. then 2
-  else 1
+  else 0
 
 (* TODO: make the following two functions somehow reasonable!!!! xD *)
 let construct_hashmap all_old_matches =
@@ -54,7 +56,11 @@ let construct_hashmap all_old_matches =
                    (List.nth current_match 0 |> to_string)
                    (List.nth current_match 2 |> to_string)
                    tbl value
-             | _ -> Printf.printf "The match in the db with epoch %s is neither a pair nor a triple. It has been ignored." epoch))
+             | _ ->
+                 Printf.printf
+                   "The match in the db with epoch %s is neither a pair nor a \
+                    triple. It has been ignored."
+                   epoch))
     all_old_matches;
   tbl
 
