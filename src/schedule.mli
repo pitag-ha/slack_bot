@@ -1,6 +1,5 @@
 module Weekday : sig
   type t = [ `Fri | `Mon | `Sat | `Sun | `Thu | `Tue | `Wed ]
-
   type span = int
 
   val span_between : allow_zero:bool -> t -> t -> int

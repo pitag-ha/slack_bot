@@ -6,7 +6,6 @@ let info message =
   Irmin_unix.info ~author:"Sonja Heinze & Gargi Sharma" "%s" message
 
 type matches = { matched : string list list } [@@deriving yojson]
-
 type timestamp = string
 
 let get_old_matches db_path =

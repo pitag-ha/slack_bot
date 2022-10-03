@@ -2,7 +2,6 @@ open Yojson.Basic
 open Yojson.Basic.Util
 
 let parsing_json all_matches_json = to_list all_matches_json |> List.map to_list
-
 let order_pair uid1 uid2 = if uid1 < uid2 then (uid1, uid2) else (uid2, uid1)
 
 let update_key uid1 uid2 tbl value =

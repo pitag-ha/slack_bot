@@ -8,8 +8,7 @@ let config =
   from_file config_file
 
 let test_channel = member "test_channel_id" config |> to_string
-
-let real_channel = member "adoption_channel_id" config |> to_string
+let real_channel = member "real_channel" config |> to_string
 
 open Types
 
@@ -57,5 +56,5 @@ let main case =
 
 let () =
   while true do
-    Lwt_main.run (main real_case)
+    Lwt_main.run (main test_case)
   done

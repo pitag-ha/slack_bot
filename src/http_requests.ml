@@ -9,7 +9,6 @@ let config =
 
 (* TODO: Take these values are argument, read them from the main module. *)
 let token = member "token" config |> to_string
-
 let bot_id = member "bot_id" config |> to_string
 
 open Lwt.Infix

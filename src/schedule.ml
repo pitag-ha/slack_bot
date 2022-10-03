@@ -1,6 +1,5 @@
 module Weekday = struct
   type t = [ `Mon | `Tue | `Wed | `Thu | `Fri | `Sat | `Sun ]
-
   type span = int
 
   let to_int = function
