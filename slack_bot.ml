@@ -1,11 +1,11 @@
 (* open Yojson.Basic
-   open Yojson.Basic.Util *)
+      open Yojson.Basic.Util
 
-(* let config =
-   let config_file =
-     try Sys.argv.(1) with _ -> failwith "Missing argument: config."
-   in
-   from_file config_file *)
+   let config =
+      let config_file =
+        try Sys.argv.(1) with _ -> failwith "Missing argument: config."
+      in
+      from_file config_file *)
 
 (* let test_channel = member "test_channel_id" config |> to_string
    let real_channel = member "real_channel" config |> to_string *)
@@ -53,18 +53,21 @@ struct
           "Http Request to write to slack failed with error : %s\n%!" e;
         Lwt.return ()
 
-  let main ~clock ~http_ctx case =
+  let rec main ~clock ~http_ctx case =
     (* let () = Logs.set_level (Some Debug) in *)
     let get_current_time () = Clock.now_d_ps clock |> Ptime.v in
 
     let module Schedule = Schedule.Sleep (Time) in
     let open Lwt.Syntax in
-    (* let* () = Schedule.sleep_till `Tue (10, 42, 0) in *)
+    (* let* () = Schedule.sleep_till `Mon (09, 00, 0) in *)
     let* () = write_opt_in_to_irmin_and_slack ~http_ctx case in
-    let* () = Schedule.sleep_till `Tue (11, 15, 0) in
+    let* () = Schedule.sleep_till `Tue (15, 20, 0) in
     let* most_optimum =
       Match.get_most_optimum ~get_random_int ~get_current_time ~http_ctx case
     in
-    write_matches_to_irmin_and_slack ~get_current_time ~http_ctx most_optimum
-      case
+    let* () =
+      write_matches_to_irmin_and_slack ~get_current_time ~http_ctx most_optimum
+        case
+    in
+    main ~clock ~http_ctx case
 end

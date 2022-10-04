@@ -8,10 +8,6 @@ let token =
   let doc = Key.Arg.info ~doc:"slack bot token" [ "token" ] in
   Key.(create "token" Arg.(required string doc))
 
-let bot_id =
-  let doc = Key.Arg.info ~doc:"slack bot bot_id" [ "bot_id" ] in
-  Key.(create "bot_id" Arg.(required string doc))
-
 let channel =
   let doc =
     Key.Arg.info ~doc:"ID of the channel to send the messages to" [ "channel" ]
@@ -34,7 +30,7 @@ let client =
       package ~sublibs:[] "ppx_deriving_yojson";
     ]
   in
-  main ~keys:[ key token; key channel; key bot_id ] ~packages "Unikernel.Client"
+  main ~keys:[ key token; key channel ] ~packages "Unikernel.Client"
   @@ http_client @-> time @-> pclock @-> random @-> job
 
 let stack = generic_stackv4v6 default_network

@@ -4,7 +4,7 @@ let shuffle ~get_random_int list =
   let nd =
     List.map
       (fun c ->
-        let random = Random.bits () in
+        let random = get_random_int () in
         (random, c))
       list
   in
