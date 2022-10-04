@@ -16,9 +16,10 @@ let get_score uid1 uid2 tbl =
   | Some num_matches -> num_matches
   | None -> 0
 
-let single_match_score epoch =
-  let now = Unix.time () in
-  let value = float_of_string epoch in
+let single_match_score ~get_current_time epoch =
+  let now = get_current_time () |> Ptime.to_float_s in
+  let value, _, _ = Ptime.of_rfc3339 epoch |> Result.get_ok in
+  let value = Ptime.to_float_s value in
   let day = 86400. in
   (* TODO: the scores should depend on the number of people opting in:
      if very few people are opting in, the most important is to avoid repeats from last week. *)
@@ -29,11 +30,11 @@ let single_match_score epoch =
   else 0
 
 (* TODO: make the following two functions somehow reasonable!!!! xD *)
-let construct_hashmap all_old_matches =
+let construct_hashmap ~get_current_time all_old_matches =
   let tbl = Hashtbl.create 256 in
   List.iter
     (fun (epoch, match_json) ->
-      let value = single_match_score epoch in
+      let value = single_match_score ~get_current_time epoch in
       from_string match_json |> member "matched" |> parsing_json
       |> List.iter (fun current_match ->
              match List.length current_match with

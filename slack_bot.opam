@@ -7,7 +7,7 @@ authors: [
 homepage: "https://github.com/gs0510/slack_bot"
 bug-reports: "https://github.com/gs0510/slack_bot/issues"
 depends: [
-  "dune" {>= "2.0"}
+  "dune" {>= "2.7"}
   "ppx_deriving_yojson"
   "lwt"
   "yojson"
@@ -16,9 +16,10 @@ depends: [
   "mirage-time-unix"
   "ptime"
   "mirage-clock-unix"
+  "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"

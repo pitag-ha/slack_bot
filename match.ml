@@ -1,8 +1,6 @@
-open Yojson.Basic.Util
+(* open Yojson.Basic.Util *)
 
-let () = Random.init (int_of_float (Unix.time ()))
-
-let shuffle list =
+let shuffle ~get_random_int list =
   let nd =
     List.map
       (fun c ->
@@ -38,9 +36,12 @@ let to_string (matches_list : string list list) =
      pair-programming partner(s) by yourself:writing_hand:\n\
     \   Have some nice pair-programming sessions! \n"
 
-let get_most_optimum (case : Types.case_record) =
+let get_most_optimum ~get_current_time ~get_random_int ~http_ctx
+    (case : Types.case_record) =
   let open Lwt.Syntax in
-  let* members = Http_requests.get_reactions case.channel case.db_path in
+  let* members =
+    Http_requests.get_reactions ~http_ctx case.channel case.db_path
+  in
   match members with
   | Error _ -> assert false
   | Ok [] -> Lwt.return [ [] ]
@@ -48,13 +49,15 @@ let get_most_optimum (case : Types.case_record) =
   | Ok [ first; second ] -> Lwt.return [ [ first; second ] ]
   | Ok members ->
       let* old_matches = Irmin_io.get_old_matches case.db_path in
-      let tbl = Score.construct_hashmap old_matches in
+      let tbl = Score.construct_hashmap ~get_current_time old_matches in
       let rec loop num_iter best_match best_score =
         if num_iter = case.num_iter then
           let _ = Printf.printf "\n Number iterations: %d \n" num_iter in
           best_match
         else
-          let new_match = members |> shuffle |> pair_up_list [] in
+          let new_match =
+            members |> shuffle ~get_random_int |> pair_up_list []
+          in
           let new_score = Score.compute_total tbl new_match in
           match new_score with
           | 0 ->
@@ -65,5 +68,5 @@ let get_most_optimum (case : Types.case_record) =
                 loop (num_iter + 1) new_match new_score
               else loop (num_iter + 1) best_match best_score
       in
-      let first_match = members |> shuffle |> pair_up_list [] in
+      let first_match = members |> shuffle ~get_random_int |> pair_up_list [] in
       Lwt.return (loop 1 first_match (Score.compute_total tbl first_match))

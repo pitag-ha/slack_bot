@@ -30,21 +30,23 @@ module Daytime = struct
     time_to_secs end_time - time_to_secs start_time
 end
 
-let secs_till schedule_day schedule_time =
-  let now = Pclock.now_d_ps () |> Ptime.v in
-  let _, (current_time, _) = Ptime.to_date_time now in
-  let secs_till_schedule_time =
-    Daytime.span_between current_time schedule_time
-  in
-  let allow_zero = secs_till_schedule_time > 0 in
-  let today = Ptime.weekday now in
-  let days_till_schedule_day =
-    Weekday.(span_between ~allow_zero today schedule_day)
-  in
-  Weekday.span_to_secs days_till_schedule_day + secs_till_schedule_time
+module Sleep (Time : Mirage_time.S) = struct
+  let secs_till schedule_day schedule_time =
+    let now = Pclock.now_d_ps () |> Ptime.v in
+    let _, (current_time, _) = Ptime.to_date_time now in
+    let secs_till_schedule_time =
+      Daytime.span_between current_time schedule_time
+    in
+    let allow_zero = secs_till_schedule_time > 0 in
+    let today = Ptime.weekday now in
+    let days_till_schedule_day =
+      Weekday.(span_between ~allow_zero today schedule_day)
+    in
+    Weekday.span_to_secs days_till_schedule_day + secs_till_schedule_time
 
-let sleep_till day time =
-  let nsecs_to_sleep =
-    secs_till day time |> Int64.of_int |> Int64.mul 1_000_000_000L
-  in
-  Time.sleep_ns nsecs_to_sleep
+  let sleep_till day time =
+    let nsecs_to_sleep =
+      secs_till day time |> Int64.of_int |> Int64.mul 1_000_000_000L
+    in
+    Time.sleep_ns nsecs_to_sleep
+end

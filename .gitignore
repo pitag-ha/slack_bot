@@ -2,3 +2,11 @@ secret-configuration.nix
 config
 _build/
 .merlin
+mirage/
+**/Makefile
+duniverse/*
+dist/*
+dev/
+dune-workspace
+dune.config
+dune
