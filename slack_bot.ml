@@ -10,6 +10,7 @@
 (* let test_channel = member "test_channel_id" config |> to_string
    let real_channel = member "real_channel" config |> to_string *)
 
+(* open Lwt.Syntax *)
 open Types
 
 (* let real_case =
@@ -28,15 +29,20 @@ struct
   let get_random_int () =
     Cstruct.HE.get_uint32 (Random.generate 4) 0 |> Int32.to_int |> abs
 
-  let write_matches_to_irmin_and_slack ~get_current_time ~http_ctx our_match
-      case =
+  let write_matches_to_irmin_and_slack ~get_current_time ~git_ctx ~http_ctx
+      our_match case =
     let open Lwt.Syntax in
     let output = Match.to_string our_match in
     let () = Printf.printf "%s" output in
     let* result = Http_requests.write_matches ~http_ctx case.channel output in
     match result with
     | Ok _ ->
-        Irmin_io.write_matches_to_irmin ~get_current_time our_match case.db_path
+        (* FIXME: do some error handling*)
+        let* _ =
+          Irmin_io.write_matches_to_irmin ~get_current_time ~git_ctx our_match
+            case.db_path
+        in
+        Lwt.return ()
     | Error e ->
         Format.printf "Http Request to write to slack failed with error : %s" e;
         Lwt.return ()
@@ -53,8 +59,10 @@ struct
           "Http Request to write to slack failed with error : %s\n%!" e;
         Lwt.return ()
 
-  let rec main ~clock ~http_ctx case =
+  let rec main ~clock ~git_ctx ~http_ctx case =
     (* let () = Logs.set_level (Some Debug) in *)
+    (* let* active_branch, remote = Irmin_io.connect_store ~git_ctx in
+       let* () = Irmin_io.pull active_branch remote in *)
     let get_current_time () = Clock.now_d_ps clock |> Ptime.v in
 
     let module Schedule = Schedule.Sleep (Time) in
@@ -66,8 +74,8 @@ struct
       Match.get_most_optimum ~get_random_int ~get_current_time ~http_ctx case
     in
     let* () =
-      write_matches_to_irmin_and_slack ~get_current_time ~http_ctx most_optimum
-        case
+      write_matches_to_irmin_and_slack ~get_current_time ~git_ctx ~http_ctx
+        most_optimum case
     in
-    main ~clock ~http_ctx case
+    main ~clock ~http_ctx ~git_ctx case
 end

@@ -6,14 +6,14 @@
  (enabled_if (= %{context_name} "solo5"))
  (name main)
  (modes (native exe))
- (libraries arp.mirage cohttp-mirage dns-client.mirage duration ethernet h2
-   happy-eyeballs-mirage httpaf irmin-mirage-git lwt mimic-happy-eyeballs
-   mirage-bootvar-solo5 mirage-clock-solo5 mirage-crypto-rng-mirage
-   mirage-logs mirage-net-solo5 mirage-random mirage-runtime mirage-solo5
-   mirage-time paf ptime tcpip.icmpv4 tcpip.ipv4 tcpip.ipv6
-   tcpip.stack-direct tcpip.tcp tcpip.udp yojson)
+ (libraries arp.mirage charrua-client.mirage cohttp-mirage dns-client.mirage
+   duration ethernet git-mirage.http git-mirage.ssh git-mirage.tcp h2
+   happy-eyeballs-mirage httpaf irmin-mirage-git lwt mimic
+   mimic-happy-eyeballs mirage-bootvar-solo5 mirage-clock-solo5
+   mirage-crypto-rng-mirage mirage-logs mirage-net-solo5 mirage-random
+   mirage-runtime mirage-solo5 mirage-time paf ptime tcpip.icmpv4
+   tcpip.ipv6 tcpip.stack-direct tcpip.tcp tcpip.udp yojson)
  (link_flags :standard -w -70 -color always -cclib "-z solo5-abi=hvt")
- (preprocess (pps ppx_deriving_yojson))
  (modules (:standard \ config manifest))
  (foreign_stubs (language c) (names manifest))
 )

@@ -8,11 +8,38 @@ let token =
   let doc = Key.Arg.info ~doc:"slack bot token" [ "token" ] in
   Key.(create "token" Arg.(required string doc))
 
+let remote =
+  let doc = Key.Arg.info ~doc:"Remote Git repository." [ "r"; "remote" ] in
+  Key.(create "remote" Arg.(required string doc))
+
 let channel =
   let doc =
     Key.Arg.info ~doc:"ID of the channel to send the messages to" [ "channel" ]
   in
   Key.(create "channel" Arg.(required string doc))
+
+let ssh_key =
+  let doc =
+    Key.Arg.info ~doc:"Private ssh key (rsa:<seed> or ed25519:<b64-key>)."
+      [ "ssh-key" ]
+  in
+  Key.(create "ssh-key" Arg.(opt (some string) None doc))
+
+let ssh_authenticator =
+  let doc =
+    Key.Arg.info ~doc:"SSH host key authenticator." [ "ssh-authenticator" ]
+  in
+  Key.(create "ssh_authenticator" Arg.(opt (some string) None doc))
+
+let tls_authenticator =
+  let doc =
+    Key.Arg.info ~doc:"TLS host authenticator." [ "tls-authenticator" ]
+  in
+  Key.(create "https_authenticator" Arg.(opt (some string) None doc))
+
+let nameservers =
+  let doc = Key.Arg.info ~doc:"Nameserver." [ "nameserver" ] in
+  Key.(create "nameserver" Arg.(opt_all string doc))
 
 let client =
   let packages =
@@ -30,11 +57,21 @@ let client =
       package ~sublibs:[] "ppx_deriving_yojson";
     ]
   in
-  main ~keys:[ key token; key channel ] ~packages "Unikernel.Client"
-  @@ http_client @-> time @-> pclock @-> random @-> job
+  main
+    ~keys:[ key token; key channel; key remote; key nameservers ]
+    ~packages "Unikernel.Client"
+  @@ http_client @-> time @-> pclock @-> random @-> git_client @-> job
 
 let stack = generic_stackv4v6 default_network
-let dns = generic_dns_client stack
+let dns = generic_dns_client ~nameservers stack
+
+let git =
+  let git = git_happy_eyeballs stack dns (generic_happy_eyeballs stack dns) in
+  let tcp = tcpv4v6_of_stackv4v6 stack in
+  merge_git_clients (git_tcp tcp git)
+    (merge_git_clients
+       (git_ssh ~key:ssh_key ~authenticator:ssh_authenticator tcp git)
+       (git_http ~authenticator:tls_authenticator tcp git))
 
 let http_client =
   let connect _ modname = function
@@ -58,7 +95,8 @@ let () =
      let conduit = conduit_direct ~tls:true stack in *)
   let job =
     [
-      client $ http_client $ default_time $ default_posix_clock $ default_random;
+      client $ http_client $ default_time $ default_posix_clock $ default_random
+      $ git;
     ]
   in
   register "friendly-unikernel" job
