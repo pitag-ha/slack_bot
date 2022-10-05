@@ -37,7 +37,7 @@ let to_string (matches_list : string list list) =
     \   Have some nice pair-programming sessions! \n"
 
 let get_most_optimum ~get_current_time ~get_random_int ~http_ctx
-    (case : Types.case_record) =
+    (case : Types.case_record) irmin =
   let open Lwt.Syntax in
   let* members =
     Http_requests.get_reactions ~http_ctx case.channel case.db_path
@@ -48,7 +48,7 @@ let get_most_optimum ~get_current_time ~get_random_int ~http_ctx
   | Ok [ only_member ] -> Lwt.return [ [ only_member ] ]
   | Ok [ first; second ] -> Lwt.return [ [ first; second ] ]
   | Ok members ->
-      let* old_matches = Irmin_io.get_old_matches case.db_path in
+      let* old_matches = Irmin_io.get_old_matches irmin in
       let tbl = Score.construct_hashmap ~get_current_time old_matches in
       let rec loop num_iter best_match best_score =
         if num_iter = case.num_iter then
