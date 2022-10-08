@@ -1,5 +1,3 @@
-(* open Yojson.Basic.Util *)
-
 let shuffle ~get_random_int list =
   let nd =
     List.map
@@ -36,11 +34,11 @@ let to_string (matches_list : string list list) =
      pair-programming partner(s) by yourself:writing_hand:\n\
     \   Have some nice pair-programming sessions! \n"
 
-let get_most_optimum ~get_current_time ~get_random_int ~http_ctx
+let get_most_optimum ~active_branch ~get_current_time ~get_random_int ~http_ctx
     (case : Types.case_record) irmin =
   let open Lwt.Syntax in
   let* members =
-    Http_requests.get_reactions ~http_ctx case.channel case.db_path
+    Http_requests.get_reactions ~active_branch ~http_ctx case.channel
   in
   match members with
   | Error _ -> assert false

@@ -60,10 +60,10 @@ let parse_reactions_response resp =
             |> Util.flatten)))
   with Yojson.Json_error err -> Error err
 
-let get_reactions ~http_ctx:{ ctx; alpn_protocol; authenticator } channel
-    db_path =
+let get_reactions ~active_branch ~http_ctx:{ ctx; alpn_protocol; authenticator }
+    channel =
   let open Lwt.Syntax in
-  let* timestamp = Irmin_io.read_timestamp_from_irmin db_path in
+  let* timestamp = Irmin_io.read_timestamp_from_irmin active_branch in
   let uri =
     Format.sprintf "https://slack.com/api/reactions.get?channel=%s&timestamp=%s"
       channel timestamp

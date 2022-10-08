@@ -28,8 +28,8 @@ let push active_branch remote =
       print_endline "Pushed something probably useful to upstream irmin";
       Lwt.return_ok ()
   | Error err ->
-    Format.eprintf ">>> %a.\n%!" Sync.pp_push_error err ;
-    Lwt.return_error (Rresult.R.msgf "%a" Sync.pp_push_error err)
+      Format.eprintf ">>> %a.\n%!" Sync.pp_push_error err;
+      Lwt.return_error (Rresult.R.msgf "%a" Sync.pp_push_error err)
 
 let info message () =
   Store.Info.v ~author:"Sonja Heinze & Gargi Sharma & Enguerrand Decorne"
@@ -39,12 +39,17 @@ type matches = { matched : string list list } [@@deriving yojson]
 type timestamp = string
 
 let get_old_matches (active_branch, _) =
-  let* epoch_list = Store.list active_branch [ "matches" ] >|= List.map (fun (step, _) -> step) in
-  let* matches = Lwt_list.map_s (fun epoch -> Store.get active_branch [ "matches"; epoch ]) epoch_list in
+  let* epoch_list =
+    Store.list active_branch [ "matches" ] >|= List.map (fun (step, _) -> step)
+  in
+  let* matches =
+    Lwt_list.map_s
+      (fun epoch -> Store.get active_branch [ "matches"; epoch ])
+      epoch_list
+  in
   Lwt.return (List.combine epoch_list matches)
 
-let write_matches_to_irmin ~get_current_time our_match
-  (active_branch, remote) =
+let write_matches_to_irmin ~get_current_time our_match (active_branch, remote) =
   let yojson_string_to_print =
     Yojson.Safe.to_string (matches_to_yojson { matched = our_match })
   in
@@ -61,9 +66,8 @@ let write_matches_to_irmin ~get_current_time our_match
 
 let write_timestamp_to_irmin timestamp (active_branch, remote) =
   let message = "last opt-in message's timestamp" in
-  Store.set_exn active_branch [ "last_timestamp" ] timestamp ~info:(info message)
+  Store.set_exn active_branch [ "last_timestamp" ] timestamp
+    ~info:(info message)
 
-let read_timestamp_from_irmin db_path =
-  let git_config = Irmin_git.config ~bare:true db_path in
-  Store.Repo.v git_config >>= Store.main >>= fun t ->
-  Store.get t [ "last_timestamp" ]
+let read_timestamp_from_irmin active_branch =
+  Store.get active_branch [ "last_timestamp" ]
