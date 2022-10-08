@@ -1,4 +1,4 @@
-secret-configuration.nix
+nix_deployment/*
 config
 _build/
 .merlin
@@ -9,4 +9,6 @@ dist/*
 dev/
 dune-workspace
 dune.config
+dune.build
 dune
+config_env.sh

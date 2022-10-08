@@ -14,13 +14,7 @@ struct
         authenticator = HTTP.authenticator;
       }
     in
-    let test_case =
-      {
-        Types.channel = Key_gen.channel ();
-        db_path = "irmin/pairing_bot_testing";
-        num_iter = 1000;
-      }
-    in
+    let test_case = { Types.channel = Key_gen.channel (); num_iter = 1000 } in
     let module Main_loop = Slack_bot.Main_loop (HTTP) (Time) (Clock) (Random) in
     Main_loop.main ~clock ~http_ctx ~git_ctx test_case
 end

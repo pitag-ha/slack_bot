@@ -1,24 +1,4 @@
-(* open Yojson.Basic
-      open Yojson.Basic.Util
-
-   let config =
-      let config_file =
-        try Sys.argv.(1) with _ -> failwith "Missing argument: config."
-      in
-      from_file config_file *)
-
-(* let test_channel = member "test_channel_id" config |> to_string
-   let real_channel = member "real_channel" config |> to_string *)
-
-(* open Lwt.Syntax *)
 open Types
-
-(* let real_case =
-   {
-     channel = real_channel;
-     db_path = "irmin/pairing_bot";
-     num_iter = 100000000;
-   } *)
 
 module Main_loop
     (HTTP : Http_mirage_client.S)
@@ -69,7 +49,7 @@ struct
     let open Lwt.Syntax in
     (* let* () = Schedule.sleep_till `Mon (09, 00, 0) in *)
     let* () = write_opt_in_to_irmin_and_slack ~http_ctx case irmin in
-    let* () = Schedule.sleep_till `Sat (16, 33, 0) in
+    let* () = Schedule.sleep_till `Sat (17, 49, 0) in
     let* most_optimum =
       Match.get_most_optimum ~get_random_int ~get_current_time ~active_branch
         ~http_ctx case irmin

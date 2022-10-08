@@ -76,16 +76,23 @@ let stack = generic_stackv4v6 default_network
 let dns = generic_dns_client ~nameservers stack
 
 let git, http =
-  let happy_eyeballs = git_happy_eyeballs stack dns (generic_happy_eyeballs stack dns) in
+  let happy_eyeballs =
+    git_happy_eyeballs stack dns (generic_happy_eyeballs stack dns)
+  in
   let tcp = tcpv4v6_of_stackv4v6 stack in
-  merge_git_clients (git_tcp tcp happy_eyeballs)
-    (merge_git_clients
-       (git_ssh ~key:ssh_key ~authenticator:ssh_authenticator tcp happy_eyeballs)
-       (git_http ~authenticator:tls_authenticator tcp happy_eyeballs)),
-  ( http_client $ default_time $ default_posix_clock $ tcpv4v6_of_stackv4v6 stack
-  $ happy_eyeballs )
+  ( merge_git_clients
+      (git_tcp tcp happy_eyeballs)
+      (merge_git_clients
+         (git_ssh ~key:ssh_key ~authenticator:ssh_authenticator tcp
+            happy_eyeballs)
+         (git_http ~authenticator:tls_authenticator tcp happy_eyeballs)),
+    http_client $ default_time $ default_posix_clock
+    $ tcpv4v6_of_stackv4v6 stack $ happy_eyeballs )
 
 let () =
   let job =
-    [ client $ http $ default_time $ default_posix_clock $ default_random $ git ] in
-  register "friendly-unikernel" job
+    [
+      client $ http $ default_time $ default_posix_clock $ default_random $ git;
+    ]
+  in
+  register "coffee-chats" job
