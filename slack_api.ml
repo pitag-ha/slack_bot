@@ -5,13 +5,15 @@ type http_ctx = {
   ctx : Mimic.ctx;
   alpn_protocol : Mimic.flow -> string option;
   authenticator : (X509.Authenticator.t, [ `Msg of string ]) result;
+  channel : string;
+  token : string;
 }
 
 open Lwt.Infix
 
-let post_request ~text ~channel ~ctx ~alpn_protocol ~authenticator =
+let post_request ~http_ctx:{ ctx; alpn_protocol; authenticator; channel; token }
+    text =
   let uri = "https://slack.com/api/chat.postMessage" in
-  let token = Key_gen.token () in
   let headers =
     [
       ("Content-type", "application/json"); ("Authorization", "Bearer " ^ token);
@@ -26,18 +28,25 @@ let post_request ~text ~channel ~ctx ~alpn_protocol ~authenticator =
   Http_mirage_client.one_request ~meth:`POST ~config ~headers ~body ~ctx
     ~alpn_protocol ~authenticator uri
 
-let get_request ~ctx ~alpn_protocol ~authenticator uri =
-  let token = Key_gen.token () in
+let get_request
+    ~http_ctx:{ ctx; alpn_protocol; authenticator; channel = _; token } uri =
   let headers = [ ("Authorization", "Bearer " ^ token) ] in
   let http_config = Httpaf.Config.default in
   let config = `HTTP_1_1 http_config in
   Http_mirage_client.one_request ~meth:`GET ~config ~headers ~ctx ~alpn_protocol
     ~authenticator uri
 
-let write_matches ~http_ctx:{ ctx; alpn_protocol; authenticator } channel output
-    =
-  post_request ~text:output ~channel ~ctx ~alpn_protocol ~authenticator
-  >|= function
+let write_matches ~http_ctx matches =
+  let msg =
+    ":camel: Matches this week:\n" ^ Matches.to_string matches
+    ^ "\n\
+      \ :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: \
+       :sheepy: :mirageos: :sheepy:\n\
+       Note: I don't initiate a conversation. You'll have to reach out to your \
+       pair-programming partner(s) by yourself:writing_hand:\n\
+      \   Have some nice pair-programming sessions! \n"
+  in
+  post_request ~http_ctx msg >|= function
   | Error err -> Error (Fmt.str "%a" Mimic.pp_error err)
   | Ok (rsp, body) -> (
       match body with
@@ -46,46 +55,43 @@ let write_matches ~http_ctx:{ ctx; alpn_protocol; authenticator } channel output
           try Ok (from_string body) with Yojson.Json_error err -> Error err)
       | _ -> Error (Fmt.str "Error code: %i" (H2.Status.to_code rsp.status)))
 
-let parse_reactions_response resp =
+let parse_response resp =
   try
     Ok
-      (List.sort_uniq String.compare
-         (List.map Util.to_string
-            (List.map
-               Util.(member "users")
-               (from_string resp
-               |> Util.(member "message")
-               |> Util.(member "reactions")
-               |> Util.to_list)
-            |> Util.flatten)))
+      (let msg = from_string resp |> Util.(member "message") in
+       match Util.member "reactions" msg with
+       | `Null ->
+           (* TODO: when there's 0 or no reactions, send a message along the lines of "No/only one opt-in this time. Do we want to pause the coffee-chats for some time?" instead
+              of the usual slack message to the channel *)
+           []
+       | json ->
+           let reactions = Util.to_list json in
+           List.sort_uniq String.compare
+             (List.map Util.to_string
+                (List.map Util.(member "users") reactions |> Util.flatten)))
   with Yojson.Json_error err -> Error err
 
-let get_reactions ~active_branch ~http_ctx:{ ctx; alpn_protocol; authenticator }
-    channel =
-  let open Lwt.Syntax in
-  let* timestamp = Irmin_io.read_timestamp_from_irmin active_branch in
+let get_reactions ~timestamp ~http_ctx =
   let uri =
     Format.sprintf "https://slack.com/api/reactions.get?channel=%s&timestamp=%s"
-      channel timestamp
+      http_ctx.channel timestamp
   in
-  get_request ~ctx ~alpn_protocol ~authenticator uri >|= function
+  get_request ~http_ctx uri >|= function
   | Error err -> Error (Fmt.str "%a" Mimic.pp_error err)
   | Ok (rsp, body) -> (
       match body with
       | None -> Error "Http request to send opt in message returned no body"
-      | Some body when H2.Status.is_successful rsp.status ->
-          parse_reactions_response body
+      | Some body when H2.Status.is_successful rsp.status -> parse_response body
       | _ -> Error (Fmt.str "Error code: %i" (H2.Status.to_code rsp.status)))
 
 let parse_ts resp = from_string resp |> member "ts" |> to_string
 
-let write_opt_in_message ~http_ctx:{ ctx; alpn_protocol; authenticator } channel
-    =
+let write_opt_in_message ~http_ctx =
   let text =
     "Hi <!here>, who wants to pair-program this week? To opt in, react to this \
      message, for example with a :raised_hand::skin-tone-4:"
   in
-  post_request ~text ~channel ~ctx ~alpn_protocol ~authenticator >|= function
+  post_request ~http_ctx text >|= function
   | Error err -> Error (Fmt.str "%a" Mimic.pp_error err)
   | Ok (rsp, body) -> (
       match body with

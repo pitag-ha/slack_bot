@@ -2,32 +2,22 @@
 
 (copy_files ./mirage/*)
 
-(executable
- (enabled_if (= %{context_name} "solo5"))
- (name main)
- (modes (native exe))
- (libraries arp.mirage cohttp-mirage dns-client.mirage duration ethernet
-   git-mirage.http git-mirage.ssh git-mirage.tcp h2 happy-eyeballs-mirage
-   httpaf irmin-mirage-git lwt mimic mimic-happy-eyeballs
-   mirage-bootvar-solo5 mirage-clock-solo5 mirage-crypto-rng-mirage
-   mirage-logs mirage-net-solo5 mirage-random mirage-runtime mirage-solo5
-   mirage-time paf ptime tcpip.icmpv4 tcpip.ipv4 tcpip.ipv6
-   tcpip.stack-direct tcpip.tcp tcpip.udp yojson)
- (link_flags :standard -w -70 -color always -cclib "-z solo5-abi=hvt")
- (modules (:standard \ config manifest))
- (preprocess (pps ppx_deriving_yojson))
- (foreign_stubs (language c) (names manifest))
-)
-
 (rule
- (targets manifest.c)
- (deps manifest.json)
- (action
-  (run solo5-elftool gen-manifest manifest.json manifest.c)))
-
-(rule
- (target coffee-chats.hvt)
- (enabled_if (= %{context_name} "solo5"))
- (deps main.exe)
+ (target coffee-chats)
+ (enabled_if (= %{context_name} "default"))
  (action
   (copy main.exe %{target})))
+
+(executable
+ (name main) (preprocess (pps ppx_deriving_yojson))
+ (libraries cohttp-mirage dns-client.mirage duration git-mirage.http
+   git-mirage.ssh git-mirage.tcp h2 happy-eyeballs-mirage httpaf
+   irmin-mirage-git lwt mimic mimic-happy-eyeballs mirage-bootvar-unix
+   mirage-clock-unix mirage-crypto-rng-mirage mirage-logs mirage-random
+   mirage-runtime mirage-time mirage-unix paf ptime tcpip.stack-direct
+   tcpip.stack-socket tcpip.tcpv4v6-socket tcpip.udpv4v6-socket yojson)
+ (link_flags (-thread))
+ (modules (:standard \ config))
+ (flags :standard -w -70 -color always)
+ (enabled_if (= %{context_name} "default"))
+)

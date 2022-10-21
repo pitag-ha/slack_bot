@@ -11,17 +11,18 @@ module Daytime : sig
   (** The format of [t] is (hour, minutes, seconds) *)
 
   val span_between : t -> t -> int
-  (** Exposed for testing purposes. [span_between] is negative if the start_time is already past the end_time *)
+  (** Exposed for testing purposes. [span_between] is negative if the start_time
+      is already past the end_time *)
 end
 
 module Sleep (Time : Mirage_time.S) : sig
+  val secs_till : Weekday.t -> Daytime.t -> int
+  (** Exposed for testing purposes*)
 
-val secs_till : Weekday.t -> Daytime.t -> int
-(** Exposed for testing purposes*)
+  val sleep_for_ns : int64 -> unit Lwt.t
 
-val sleep_till : Weekday.t -> Daytime.t -> unit Lwt.t
-(** [sleep_till day time] makes the OS sleep for the number of seconds left
-    until the most proximate moment in which it is weekday [day] at [time] o'clock.
-    [time] is in UTC. *)
-
+  val sleep_till : Weekday.t -> Daytime.t -> unit Lwt.t
+  (** [sleep_till day time] makes the OS sleep for the number of seconds left
+      until the most proximate moment in which it is weekday [day] at [time]
+      o'clock. [time] is in UTC. *)
 end

@@ -3,6 +3,8 @@ open Lwt.Syntax
 module Store = Irmin_mirage_git.Mem.KV.Make (Irmin.Contents.String)
 module Sync = Irmin.Sync.Make (Store)
 
+type t = { branch : Store.t; remote : Irmin.remote }
+
 let connect_store ~git_ctx =
   let config = Irmin_git.config "." in
   let remote, branch =
@@ -12,15 +14,17 @@ let connect_store ~git_ctx =
   in
   Store.Repo.v config >>= fun repository ->
   Store.of_branch repository branch >>= fun active_branch ->
-  Lwt.return (active_branch, Store.remote ~ctx:git_ctx remote)
+  Lwt.return
+    { branch = active_branch; remote = Store.remote ~ctx:git_ctx remote }
 
-let pull active_branch remote =
-  Sync.pull active_branch remote `Set >>= function
-  | Error err -> Fmt.failwith "%a" Sync.pp_pull_error err
+let pull { branch; remote } =
+  Sync.pull branch remote `Set >>= function
+  | Error err ->
+      Fmt.failwith "Couldn't pull from irmin store: %a" Sync.pp_pull_error err
   | Ok (`Empty | `Head _) -> Lwt.return ()
 
-let push active_branch remote =
-  Sync.push active_branch remote >>= function
+let push { branch; remote } =
+  Sync.push branch remote >>= function
   | Ok `Empty ->
       print_endline "Pushing to upstream irmin was possibly useless.";
       Lwt.return_ok ()
@@ -31,43 +35,39 @@ let push active_branch remote =
       Format.eprintf ">>> %a.\n%!" Sync.pp_push_error err;
       Lwt.return_error (Rresult.R.msgf "%a" Sync.pp_push_error err)
 
+let update_db ~dir ~content ~irmin ~info =
+  let* () = Store.set_exn irmin.branch dir content ~info in
+  push irmin
+
 let info message () =
   Store.Info.v ~author:"Sonja Heinze & Gargi Sharma & Enguerrand Decorne"
     ~message 0L
 
-type matches = { matched : string list list } [@@deriving yojson]
-type timestamp = string
+let write_matches ~epoch our_match irmin =
+  let content = Yojson.Safe.to_string (Matches.to_db_entry our_match) in
+  let (year, month, day), _ = Ptime.to_date_time epoch in
+  let message = Printf.sprintf "Matches %i/%i/%i" day month year in
+  let epoch_s = Ptime.to_rfc3339 epoch in
+  update_db ~dir:[ "matches"; epoch_s ] ~content ~irmin ~info:(info message)
 
-let get_old_matches (active_branch, _) =
+let write_timestamp ~ts irmin =
+  let message = "last opt-in message's timestamp" in
+  update_db ~dir:[ "last_timestamp" ] ~content:ts ~irmin ~info:(info message)
+
+let read_matches { branch; _ } =
   let* epoch_list =
-    Store.list active_branch [ "matches" ] >|= List.map (fun (step, _) -> step)
+    Store.list branch [ "matches" ] >|= List.map (fun (step, _) -> step)
   in
-  let* matches =
+  let* matches_json =
     Lwt_list.map_s
-      (fun epoch -> Store.get active_branch [ "matches"; epoch ])
+      (fun epoch -> Store.get branch [ "matches"; epoch ])
       epoch_list
+  in
+  let matches =
+    List.map
+      (fun s -> Matches.of_db_entry @@ Yojson.Safe.from_string s)
+      matches_json
   in
   Lwt.return (List.combine epoch_list matches)
 
-let write_matches_to_irmin ~get_current_time our_match (active_branch, remote) =
-  let yojson_string_to_print =
-    Yojson.Safe.to_string (matches_to_yojson { matched = our_match })
-  in
-  let current_time = get_current_time () in
-  let (year, month, day), _ = Ptime.to_date_time current_time in
-  let message = Printf.sprintf "Matches %i/%i/%i" day month year in
-  let current_time_s = Ptime.to_rfc3339 current_time in
-  let* () =
-    Store.set_exn active_branch
-      [ "matches"; current_time_s ]
-      yojson_string_to_print ~info:(info message)
-  in
-  push active_branch remote
-
-let write_timestamp_to_irmin timestamp (active_branch, remote) =
-  let message = "last opt-in message's timestamp" in
-  Store.set_exn active_branch [ "last_timestamp" ] timestamp
-    ~info:(info message)
-
-let read_timestamp_from_irmin active_branch =
-  Store.get active_branch [ "last_timestamp" ]
+let read_timestamp { branch; _ } = Store.get branch [ "last_timestamp" ]

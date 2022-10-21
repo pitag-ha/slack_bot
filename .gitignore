@@ -12,3 +12,4 @@ dune.config
 dune.build
 dune
 config_env.sh
+notes.txt

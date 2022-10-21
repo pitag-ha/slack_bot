@@ -49,4 +49,6 @@ module Sleep (Time : Mirage_time.S) = struct
       secs_till day time |> Int64.of_int |> Int64.mul 1_000_000_000L
     in
     Time.sleep_ns nsecs_to_sleep
+
+  let sleep_for_ns = Time.sleep_ns
 end

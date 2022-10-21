@@ -12,6 +12,12 @@ let remote =
   let doc = Key.Arg.info ~doc:"Remote Git repository." [ "r"; "remote" ] in
   Key.(create "remote" Arg.(required string doc))
 
+let num_iter =
+  let doc =
+    Key.Arg.info ~doc:"Number of iterations to find matches." [ "num-iter" ]
+  in
+  Key.(create "num-iter" Arg.(required int doc))
+
 let channel =
   let doc =
     Key.Arg.info ~doc:"ID of the channel to send the messages to" [ "channel" ]
@@ -41,6 +47,17 @@ let nameservers =
   let doc = Key.Arg.info ~doc:"Nameserver." [ "nameserver" ] in
   Key.(create "nameserver" Arg.(opt_all string doc))
 
+let test =
+  let doc =
+    Key.Arg.info
+      ~doc:
+        "Send opt-in message directly and then wait for one min to fetch \
+         reactions and to send matches (as opposed to waiting for Monday and \
+         Tuesday)."
+      [ "test" ]
+  in
+  Key.(create "test" Arg.(required bool doc))
+
 let client =
   let packages =
     [
@@ -58,7 +75,15 @@ let client =
     ]
   in
   main
-    ~keys:[ key token; key channel; key remote; key nameservers ]
+    ~keys:
+      [
+        key token;
+        key channel;
+        key remote;
+        key num_iter;
+        key nameservers;
+        key test;
+      ]
     ~packages "Unikernel.Client"
   @@ http_client @-> time @-> pclock @-> random @-> git_client @-> job
 
