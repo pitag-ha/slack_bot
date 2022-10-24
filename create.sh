@@ -61,6 +61,7 @@ case $1 in
   network)
     network;;
   spawn_hvt)
+    eval "$(opam env)"
     solo5-hvt --net:service=tap0 dist/coffee-chats.hvt --ipv4=10.0.0.2/24 --ipv4-gateway=10.0.0.1;;
   *)
     echo "try $./create.sh unikernel test unix"
