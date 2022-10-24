@@ -33,11 +33,9 @@ let write_opt_in_to_irmin_and_slack ~http_ctx irmin =
       Lwt.return ()
 
 let rec main ~clock ~sleep_till ~sleep_for_ns ~get_current_time ~get_random_int
-    ~git_ctx ~http_ctx ~num_iter =
+    ~git_ctx ~http_ctx ~num_iter ~irmin =
   (* let () = Logs.set_level (Some Debug) in *)
   let is_test = Key_gen.test () in
-  let* irmin = Irmin_io.connect_store ~git_ctx in
-  let* () = Irmin_io.pull irmin in
   let* () = if is_test then Lwt.return () else sleep_till `Mon (09, 00, 0) in
   let* () = write_opt_in_to_irmin_and_slack ~http_ctx irmin in
   let* () =
@@ -66,7 +64,7 @@ let rec main ~clock ~sleep_till ~sleep_for_ns ~get_current_time ~get_random_int
       irmin
   in
   main ~clock ~sleep_till ~sleep_for_ns ~get_current_time ~get_random_int
-    ~http_ctx ~git_ctx ~num_iter
+    ~http_ctx ~git_ctx ~num_iter ~irmin
 
 module Client
     (HTTP : Http_mirage_client.S)
@@ -94,6 +92,8 @@ struct
       (*FIXME??: why 4 and why 0? *)
       Cstruct.HE.get_uint32 (Random.generate 4) 0 |> Int32.to_int |> abs
     in
+    let* irmin = Irmin_io.connect_store ~git_ctx in
+    let* () = Irmin_io.pull irmin in
     main ~clock ~sleep_till ~sleep_for_ns ~get_current_time ~get_random_int
-      ~http_ctx ~git_ctx ~num_iter
+      ~http_ctx ~git_ctx ~num_iter ~irmin
 end
