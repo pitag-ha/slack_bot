@@ -9,7 +9,7 @@ let of_db_entry entry =
   match db_entry_of_yojson entry with
   | Ok res -> downcast res
   | Error e ->
-      Printf.eprintf "Data base entry couldn't be parsed: %s\n" e;
+      Printf.eprintf "Data base entry couldn't be parsed: %s\n%!" e;
       exit 1
 
 module Score_machine = struct
@@ -63,7 +63,7 @@ module Score_machine = struct
             | _ ->
                 Printf.printf
                   "The match in the db with epoch %s is neither a pair nor a \
-                   triple. It has been ignored.\n"
+                   triple. It has been ignored.\n%!"
                   epoch)
           matches)
       old_matches;
@@ -130,14 +130,14 @@ let generate ~num_iter ~get_random_int ~score_machine ~opt_ins : t Lwt.t =
   | opt_ins ->
       let rec loop i best_match best_score =
         if i = num_iter then
-          let _ = Printf.printf "\n Number iterations: %d \n" i in
+          let _ = Printf.printf "\n Number iterations: %d \n%!" i in
           best_match
         else
           let new_match = opt_ins |> shuffle ~get_random_int |> pair_up [] in
           let new_score = Score_machine.compute ~score_machine new_match in
           match new_score with
           | 0 ->
-              let _ = Printf.printf "\n Number iterations: %d \n" i in
+              let _ = Printf.printf "\n Number iterations: %d \n%!" i in
               new_match
           | _ ->
               if new_score < best_score then loop (i + 1) new_match new_score

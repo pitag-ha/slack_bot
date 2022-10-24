@@ -8,12 +8,12 @@ let write_matches_to_irmin_and_slack ~get_current_time ~http_ctx matches irmin =
       let* res = Irmin_io.write_matches ~epoch matches irmin in
       let () =
         match res with
-        | Ok () -> Format.printf "Updating db should have worked!\n"
-        | Error (`Msg e) -> Format.eprintf "Error trying to update db: %s" e
+        | Ok () -> Format.printf "Updating db should have worked!\n%!"
+        | Error (`Msg e) -> Format.eprintf "Error trying to update db: %s\n%!" e
       in
       Lwt.return ()
   | Error e ->
-      Format.printf "Http Request to write to slack failed with error : %s" e;
+      Format.printf "Http Request to write to slack failed with error : %s\n%!" e;
       Lwt.return ()
 
 let write_opt_in_to_irmin_and_slack ~http_ctx irmin =
@@ -23,8 +23,8 @@ let write_opt_in_to_irmin_and_slack ~http_ctx irmin =
       let* res = Irmin_io.write_timestamp ~ts irmin in
       let () =
         match res with
-        | Ok () -> Format.printf "Updating db should have worked!\n"
-        | Error (`Msg e) -> Format.eprintf "Error trying to update db: %s" e
+        | Ok () -> Format.printf "Updating db should have worked!\n%!"
+        | Error (`Msg e) -> Format.eprintf "Error trying to update db: %s\n%!" e
       in
       Lwt.return ()
   | Error e ->
@@ -54,7 +54,7 @@ let rec main ~clock ~sleep_till ~sleep_for_ns ~get_current_time ~get_random_int
   let opt_ins =
     match reactions with
     | Error e ->
-        Printf.eprintf "Error trying to fetch opt-ins: %s" e;
+        Printf.eprintf "Error trying to fetch opt-ins: %s\n%!" e;
         []
     | Ok opt_ins -> opt_ins
   in
