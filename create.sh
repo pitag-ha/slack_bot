@@ -2,7 +2,7 @@
 set -euo pipefail
 
 mirage_stuff () {
-    mirage config -t "$TARGET" --dhcp "$DHCP" --token "$TOKEN" --ssh-key "$SSH" --channel "$CHANNEL" --remote "$REMOTE" --num-iter "$NUM_ITER" --test "$IS_TEST"
+    mirage config -t "$TARGET" --dhcp "$DHCP" --token "$COFFEE_TOKEN" --ssh-key "$SSH" --channel "$CHANNEL" --remote "$REMOTE" --num-iter "$NUM_ITER" --test "$IS_TEST"
     make depend
     sed -i 's/main)/main) (preprocess (pps ppx_deriving_yojson))/g' dune.build # currently, the mirage config doesn't add ppxs to dune.build
     mirage build
@@ -32,26 +32,30 @@ unikernel () {
     unix)
       export TARGET="unix"
       export DHCP="false"
+       mirage_stuff
       ;;
     hvt)
       export TARGET="hvt"
       export DHCP="false"
+      mirage_stuff
       ;;
     virtio)
       export TARGET="virtio"
       export DHCP="true"
+      mirage_stuff
+      "$VIRTIO_MKIMAGE" -f tar -- dist/disk.raw.tar.gz dist/coffee-chats.virtio
       ;;
     *)
       echo "What's the target for your coffee? Mug or glass?"
   esac
-  mirage_stuff
 }
 
 network () {
   sudo ip tuntap add tap0 mode tap # add a new network interface called tap0
   sudo ip addr add 10.0.0.1/24 dev tap0 # assign IP 10.0.0.1/24 to network interface tap0
   sudo ip link set tap0 up # enable network interface tap0
-  sudo iptables -I FORWARD -j ACCEPT -i tap0 # add rule to forward chain to forward all packets going through tap0
+  sudo iptables -I FORWARD -i tap0 -o wlp0s20f3 -j ACCEPT # add rule to forward chain to forward all packets from tap0 to wifi interface
+  sudo iptables -I FORWARD -i wlp0s20f3 -o tap0 -m state --state ESTABLISHED,RELATED -j ACCEPT # add rule to forward chain to forward all packets from wifi interface to tap0
   sudo iptables -t nat -A POSTROUTING -o wlp0s20f3 -j MASQUERADE # tweak the target IP of response package from unikernel IP to hostsystem IP: "masquerading"
 }
 
