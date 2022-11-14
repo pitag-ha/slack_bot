@@ -38,13 +38,14 @@ let get_request
 
 let write_matches ~http_ctx matches =
   let msg =
-    ":camel: Matches this week:\n" ^ Matches.to_string matches
+    ":coffee: *Virtual Coffee* :coffee:\n :camel: Matches this week:\n"
+    ^ Matches.to_string matches
     ^ "\n\
       \ :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: :sheepy: \
        :sheepy: :mirageos: :sheepy:\n\
-       Note: I don't initiate a conversation. You'll have to reach out to your \
-       pair-programming partner(s) by yourself:writing_hand:\n\
-      \   Have some nice pair-programming sessions! \n"
+       Note: I don't initiate a conversation. So, please, don't forget to \
+       reach out to your coffee-chat partner(s):writing_hand:\n\
+      \   Have some nice coffee chats! \n"
   in
   post_request ~http_ctx msg >|= function
   | Error err -> Error (Fmt.str "%a" Mimic.pp_error err)
@@ -88,7 +89,9 @@ let parse_ts resp = from_string resp |> member "ts" |> to_string
 
 let write_opt_in_message ~http_ctx =
   let text =
-    "Hi <!here>, who wants to pair-program this week? To opt in, react to this \
+    ":coffee: *Virtual Coffee* :coffee:\n\
+    \ Hi everyone,\n\
+    \ Who wants to have a coffee-chat this week? To opt in, react to this \
      message, for example with a :raised_hand::skin-tone-4:"
   in
   post_request ~http_ctx text >|= function
