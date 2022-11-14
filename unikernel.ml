@@ -13,7 +13,8 @@ let write_matches_to_irmin_and_slack ~get_current_time ~http_ctx matches irmin =
       in
       Lwt.return ()
   | Error e ->
-      Format.printf "Http Request to write to slack failed with error : %s\n%!" e;
+      Format.printf "Http Request to write to slack failed with error : %s\n%!"
+        e;
       Lwt.return ()
 
 let write_opt_in_to_irmin_and_slack ~http_ctx irmin =
@@ -34,27 +35,25 @@ let write_opt_in_to_irmin_and_slack ~http_ctx irmin =
 
 let rec main ~clock ~sleep_till ~sleep_for_ns ~get_current_time ~get_random_int
     ~git_ctx ~http_ctx ~num_iter ~irmin =
-  (* let () = Logs.set_level (Some Debug) in *)
   let is_test = Key_gen.test () in
-  let* () = if is_test then Lwt.return () else sleep_till `Mon (09, 00, 0) in
+  let* () = if is_test then Lwt.return () else sleep_till `Mon (08, 30, 0) in
   let* () = write_opt_in_to_irmin_and_slack ~http_ctx irmin in
   let* () =
-    if is_test then sleep_for_ns 60000000000L else sleep_till `Tue (09, 00, 0)
+    if is_test then sleep_for_ns 60000000000L else sleep_till `Tue (08, 30, 0)
   in
-  let* score_machine =
-    let+ old_matches = Irmin_io.read_matches irmin in
-    let current_time = get_current_time () |> Ptime.to_float_s in
-    Matches.Score_machine.get ~current_time ~old_matches
-  in
-  let* timestamp = Irmin_io.read_timestamp irmin in
-  let* reactions = Slack_api.get_reactions ~timestamp ~http_ctx in
-  (* FIXME*)
-  let opt_ins =
+  let* opt_ins =
+    let* timestamp = Irmin_io.read_timestamp irmin in
+    let+ reactions = Slack_api.get_reactions ~timestamp ~http_ctx in
     match reactions with
     | Error e ->
         Printf.eprintf "Error trying to fetch opt-ins: %s\n%!" e;
         []
     | Ok opt_ins -> opt_ins
+  in
+  let* score_machine =
+    let+ old_matches = Irmin_io.read_matches irmin in
+    let current_time = get_current_time () |> Ptime.to_float_s in
+    Matches.Score_machine.get ~current_time ~old_matches
   in
   let* new_matches =
     Matches.generate ~num_iter ~get_random_int ~score_machine ~opt_ins
@@ -73,6 +72,7 @@ module Client
     (Random : Mirage_random.S) (_ : sig end) =
 struct
   let start ctx _time clock _random git_ctx =
+    (* let () = Logs.set_level (Some Debug) in *)
     let http_ctx =
       {
         Slack_api.ctx;

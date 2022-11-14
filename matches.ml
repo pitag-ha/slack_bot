@@ -63,7 +63,8 @@ module Score_machine = struct
             | _ ->
                 Printf.printf
                   "The match in the db with epoch %s is neither a pair nor a \
-                   triple. It has been ignored.\n%!"
+                   triple. It has been ignored.\n\
+                   %!"
                   epoch)
           matches)
       old_matches;

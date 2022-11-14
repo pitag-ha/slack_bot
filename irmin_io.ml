@@ -20,7 +20,8 @@ let connect_store ~git_ctx =
 let pull { branch; remote } =
   Sync.pull branch remote `Set >>= function
   | Error err ->
-      Fmt.failwith "Couldn't pull from irmin store: %a\n%!" Sync.pp_pull_error err
+      Fmt.failwith "Couldn't pull from irmin store: %a\n%!" Sync.pp_pull_error
+        err
   | Ok (`Empty | `Head _) -> Lwt.return ()
 
 let push { branch; remote } =
