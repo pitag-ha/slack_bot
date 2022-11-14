@@ -47,6 +47,21 @@ let nameservers =
   let doc = Key.Arg.info ~doc:"Nameserver." [ "nameserver" ] in
   Key.(create "nameserver" Arg.(opt_all string doc))
 
+let bot_id =
+  let doc = Key.Arg.info ~doc:"ID of coffee bot." [ "bot-id" ] in
+  Key.(create "bot-id" Arg.(required string doc))
+
+let curl_user_id =
+  let doc =
+    Key.Arg.info
+      ~doc:
+        "User ID of a user who can only react to a Slack message via an http \
+         request. That user can use the bot itself to react. The bot ID will \
+         be turned into the user's ID."
+      [ "curl-user-id" ]
+  in
+  Key.(create "curl-user-id" Arg.(opt (some string) None doc))
+
 let test =
   let doc =
     Key.Arg.info
@@ -82,6 +97,8 @@ let client =
         key remote;
         key num_iter;
         key nameservers;
+        key curl_user_id;
+        key bot_id;
         key test;
       ]
     ~packages "Unikernel.Client"

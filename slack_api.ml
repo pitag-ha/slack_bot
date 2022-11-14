@@ -65,11 +65,20 @@ let parse_response resp =
            (* TODO: when there's 0 or no reactions, send a message along the lines of "No/only one opt-in this time. Do we want to pause the coffee-chats for some time?" instead
               of the usual slack message to the channel *)
            []
-       | json ->
+       | json -> (
            let reactions = Util.to_list json in
-           List.sort_uniq String.compare
-             (List.map Util.to_string
-                (List.map Util.(member "users") reactions |> Util.flatten)))
+           let original =
+             List.sort_uniq String.compare
+               (List.map Util.to_string
+                  (List.map Util.(member "users") reactions |> Util.flatten))
+           in
+           match Key_gen.curl_user_id () with
+           | None -> original
+           | Some curl_user_id ->
+               let bot_id = Key_gen.bot_id () in
+               List.map
+                 (fun id -> if String.equal id bot_id then curl_user_id else id)
+                 original))
   with Yojson.Json_error err -> Error err
 
 let get_reactions ~timestamp ~http_ctx =
