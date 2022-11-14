@@ -62,6 +62,14 @@ let rec main ~clock ~sleep_till ~sleep_for_ns ~get_current_time ~get_random_int
     write_matches_to_irmin_and_slack ~get_current_time ~http_ctx new_matches
       irmin
   in
+  let* () =
+    if is_test then Lwt.return ()
+    else
+      let min_in_ns = 60000000000L in
+      let week_in_ns = Int64.mul min_in_ns (Int64.of_int (60 * 24 * 7)) in
+      sleep_for_ns week_in_ns
+  in
+  Format.printf "I've just slept for a week\n%!";
   main ~clock ~sleep_till ~sleep_for_ns ~get_current_time ~get_random_int
     ~http_ctx ~git_ctx ~num_iter ~irmin
 
