@@ -1,8 +1,0 @@
-# TODO
-
-- new feature: write a private message to each matched couple/triple proposing a time for their chat
-- new feature: avoid matching two people at the same office
-- use upstream `httpaf` (it's released now) instead of "vendoring" it into http_mirage_client.{ml,mli}
-- improve `create.sh`. to start with, write it in OCaml
-- have a look at the TODOs and FIXMEs in the code
-- improve the logging and error messages and make them more coherent
